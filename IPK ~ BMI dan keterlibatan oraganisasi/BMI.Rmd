@@ -5,26 +5,102 @@ date: "2025-11-17"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+## 0. Persiapan Library
+
+```{r}
+library(tidyverse)
+library(car)
+library(ggpubr)
+library(DescTools)
+library(rstatix)
+library(readr)  
+library(dplyr)
 ```
 
-## R Markdown
+## 1. Import Data
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+df <- read.csv("Dataset Tugas Besar ADS 2025 - Karakteristik Mahasiswa .csv")
 ```
 
-## Including Plots
+## 2 .Data cleaning 
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+str(df)
+colSums(is.na(df))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+df$IPK.raw <- df$IPK.Terakhir
+
+# 1. Mengubah koma menajadi titik
+df$IPK.clean <- gsub(",", ".", df$IPK.raw)
+
+# 2. Ubah teks non_numerik ("-", "Belum ada", dll) menjadi NA 
+df$IPK.clean[df$IPK.clean %in% c("-", "Belum ada", "belum diketahui", "", " ", NA )] <- NA
+
+# 4. Konversi ke numeric
+df$IPK.clean <- as.numeric(df$IPK.clean)
+
+# 5. Cek Hasil
+summary(df$IPK.clean)
+```
+
+```{r}
+df$Tinggi.clean <- df$Tinggi.Badan..|>
+  tolower()|>
+  gsub("cm", "", x = _)|>
+  gsub("[a-z]", "", x = _)|>
+  parse_number()
+
+df$Berat.clean <- df$Berat.Badan..|>
+  tolower()|>
+  gsub("kg", "", x = _)|>
+  gsub("[a-z]", "", x = _)|>
+  parse_number()
+
+
+
+df %>% filter(Tinggi.clean < 130  | Tinggi.clean > 210 )
+df$Tinggi.clean[df$Tinggi.clean < 130] <- NA
+
+# Konversi Tinggi ke meter 
+df$Tinggi.m <- df$Tinggi.clean / 100
+
+# Hitung BMI
+df$BMI <- df$Berat.clean / (df$Tinggi.m^2)
+  
+summary(df[, c("Tinggi.Badan..", "Tinggi.clean", "Berat.Badan..", "Berat.clean", "BMI")])
+
+df$BMI_cat <- cut(df$BMI, breaks=c(-Inf,18.5,25,30,Inf),
+                  labels=c("Under","Normal","Over","Obese"))
+```
+
+## 3 .EDA
+
+```{r}
+library(ggplot2)
+ggplot(df, aes(BMI, IPK.clean)) +
+  geom_point(alpha=10) +
+  geom_smooth(method="loess") +
+  facet_wrap(~ BMI_cat)
+```
+
+## 4 .ANOVA
+
+```{r}
+# Model Bivariat 
+# IPK ~ kerelibatan
+
+model <-aov(df$IPK.clean ~ df$Keterlibatan.Organisai)
+summary(model)
+
+# IPK ~ BMI
+model <-aov(df$IPK.clean ~ df$BMI)
+summary(model)
+
+# IPK ~ keterlibatan + BMI
+model <- aov(df$IPK.clean ~ df$BMI + df$Keterlibatan.Organisai)
+summary(model)
+
+```
