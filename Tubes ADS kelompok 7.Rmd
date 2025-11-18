@@ -1,0 +1,174 @@
+---
+title: "Tubes Kelompok 7"
+author: "Naufal Aziz Ferdian, Favian Arkanda, Azzelya Thiarnady"
+date: "2025-11-15"
+output: html_document
+---
+
+## 0. Persiapan Library
+
+```{r}
+auto_library <- function(pkg){
+  if (!require(pkg, character.only = TRUE)) {
+    install.packages(pkg, dependencies = TRUE)
+    library(pkg, character.only = TRUE)
+  }
+}
+
+)=
+```
+
+```{r}
+library("tidyverse")
+library("car")
+library("ggpubr")
+library("DescTools")
+library("rstatix"
+```
+
+## 1. Import Data
+
+```{r}
+df <- read.csv("Dataset Tugas Besar ADS 2025 - Karakteristik Mahasiswa .csv")##
+```
+
+## 🧹 **2. DATA CLEANING**
+
+```{r}
+str(df)
+colSums(is.na(df))
+```
+
+```{r}
+df$IPK.raw <- df$IPK.Terakhir
+
+# 1. Mengubah koma menajadi titik
+df$IPK.clean <- gsub(",", ".", df$IPK.raw)
+
+# 2. Ubah teks non_numerik ("-", "Belum ada", dll) menjadi NA 
+df$IPK.clean[df$IPK.clean %in% c("-", "Belum ada", "belum diketahui", "", " ", NA )] <- NA
+
+# 4. Konversi ke numeric
+df$IPK.clean <- as.numeric(df$IPK.clean)
+
+# 5. Cek Hasil
+summary(df$IPK.clean)
+```
+
+## 📊 **3. EDA (Exploratory Data Analysis)**
+
+```{R}
+df$Uang.Saku.....yang.diberikan.oleh.orangtua.
+```
+
+```{r}
+summary(df[, c("IPK.clean", "Uang.Saku.....yang.diberikan.oleh.orangtua.")])
+```
+
+```{r}
+# Histogram IPK
+ggplot(df, aes(IPK.clean)) + 
+  geom_histogram(bins=100, fill="skyblue") + 
+  geom_density()
+```
+
+```{r}
+df$Akses.Internet..yang.paling.sering.digunakan.
+```
+
+```{r}
+# boxplot IPK
+ggplot(df, aes(Akses.Internet..yang.paling.sering.digunakan., IPK.clean)) +
+  geom_boxplot(fill="orange")
+```
+
+## 🧪 **4. UJI ASUMSI ANOVA**
+
+```{r}
+# sahpirop test
+shapiro.test(df$IPK.clean)
+```
+
+```{r}
+# 4.2 Homogenitas varians(Levene test)
+leveneTest(IPK.clean ~ Akses.Internet..yang.paling.sering.digunakan., data=df)
+```
+
+## 🧮 **5. ANOVA Satu Arah**
+
+Model:
+
+IPK=μ+αi+ϵ\text{IPK} = \mu + \alpha\_i + \epsilonIPK=μ+αi​+ϵ
+
+```{r}
+anova_model <- aov(IPK.clean ~ Akses.Internet..yang.paling.sering.digunakan., data=df)
+summary(anova_model)
+```
+
+## 📉 **6. Regresi Linear: IPK \~ Uang Saku**
+
+```{r}
+reg <- lm(IPK.clean ~ Uang.Saku.....yang.diberikan.oleh.orangtua., data = df)
+summary(reg)
+```
+
+```{r}
+ggplot(df, aes(Uang.Saku.....yang.diberikan.oleh.orangtua., IPK.clean)) +
+  geom_point() +
+  geom_smooth(method="lm")
+```
+
+## 🔥 **7. ANCOVA (Gabungan ANOVA + Regresi)**
+
+```{r}
+anova_model <- lm(IPK.clean ~ Akses.Internet..yang.paling.sering.digunakan., data = df)
+anova(anova_model)
+summary(anova_model)
+```
+
+```{r}
+ancova_interaction <- lm(IPK.clean ~ Akses.Internet..yang.paling.sering.digunakan.* Uang.Saku.....yang.diberikan.oleh.orangtua., data = df)
+anova(ancova_interaction)
+summary(ancova_interaction)
+```
+
+interaction.plot(
+
+x.factor = df\$Akses.Internet..yang.paling.sering.digunakan.,
+
+trace.factor = df\$Uang.Saku.....yang.diberikan.oleh.orangtua.,
+
+response = df\$IPK.clean,
+
+type = "b",
+
+col = c("red", "blue", "green", "purple"),
+
+pch = 19,
+
+main = "Interaction Plot: Akses Internet × Uang Saku",
+
+xlab = "Akses Internet",
+
+ylab = "Rata-rata IPK",
+
+trace.label = "Uang Saku"
+
+```{r}
+boxplot(IPK.clean ~ Akses.Internet..yang.paling.sering.digunakan.,
+        data = df,
+        col = "lightblue",
+        main = "Boxplot IPK berdasarkan Akses Internet",
+        xlab = "Jenis Akses Internet",
+        ylab = "IPK")
+
+```
+
+```{r}
+boxplot(IPK.clean ~ Uang.Saku.....yang.diberikan.oleh.orangtua.,
+        data = df,
+        col = "lightgreen",
+        main = "Boxplot IPK berdasarkan Uang Saku",
+        xlab = "Kategori Uang Saku",
+        ylab = "IPK")
+```
