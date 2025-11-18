@@ -8,11 +8,22 @@ output: html_document
 ## 0. Persiapan Library
 
 ```{r}
-library(tidyverse)
-library(car)
-library(ggpubr)
-library(DescTools)
-library(rstatix)
+auto_library <- function(pkg){
+  if (!require(pkg, character.only = TRUE)) {
+    install.packages(pkg, dependencies = TRUE)
+    library(pkg, character.only = TRUE)
+  }
+}
+
+)=
+```
+
+```{r}
+library("tidyverse")
+library("car")
+library("ggpubr")
+library("DescTools")
+library("rstatix"
 ```
 
 ## 1. Import Data
@@ -87,7 +98,7 @@ leveneTest(IPK.clean ~ Akses.Internet..yang.paling.sering.digunakan., data=df)
 
 Model:
 
-IPK=μ+αi+ϵ\text{IPK} = \mu + \alpha_i + \epsilonIPK=μ+αi​+ϵ
+IPK=μ+αi+ϵ\text{IPK} = \mu + \alpha\_i + \epsilonIPK=μ+αi​+ϵ
 
 ```{r}
 anova_model <- aov(IPK.clean ~ Akses.Internet..yang.paling.sering.digunakan., data=df)
